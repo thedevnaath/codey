@@ -78,9 +78,8 @@
   </div>
 
   <script>
-    // State storage for full session memory tracking
     let repoFilePaths = [];
-    let chatHistoryLog = []; // Stores context memory lines to avoid hitting limits
+    let chatHistoryLog = []; 
     let proposedPlanData = null;
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -110,7 +109,6 @@
         if (!response.ok) throw new Error(await response.text());
         const data = await response.json();
         
-        // Extract string file paths explicitly to provide clean metadata to the Architect
         repoFilePaths = data.tree
           .filter(item => item.type === 'blob' && !item.path.includes('node_modules') && !item.path.includes('.next') && !item.path.includes('.git'))
           .map(item => item.path);
@@ -119,23 +117,107 @@
         document.getElementById('workspace').style.display = 'block';
         document.getElementById('globalStatus').innerText = "Architect System Online";
         
-        // Push initial memory context baseline 
-        chatHistoryLog.push({
-          role: "user",
-          parts: [{ text: `Here is the current directory structure tree of our repository:\n${JSON.stringify(repoFilePaths, null, 2)}` }]
-        });
-        chatHistoryLog.push({
-          role: "model",
-          parts: [{ text: "Understood. I have verified the complete file tree mapping. I am ready to coordinate changes." }]
-        });
+        const systemInstruction = `You are the Architect Agent for a complex SaaS project. You guide the user in building features.
+        You have access to the following repository file tree:
+        ${JSON.stringify(repoFilePaths)}
+        
+        Rules:
+        1. Discuss the feature the user wants to build. Ask clarifying questions if the request is ambiguous or if you aren't sure which files need to be modified.
+        2. When you are confident about exactly which files need to be changed to fulfill the request, you MUST output your plan in a strict JSON block at the end of your message. 
+        3. The JSON block MUST be formatted exactly like this, enclosed in \`\`\`json and \`\`\` tags:
+        \`\`\`json
+        {
+          "explanation": "A one-sentence summary of the execution plan.",
+          "filesToModify": ["path/to/file1.js", "path/to/file2.js"]
+        }
+        \`\`\`
+        Never invent file paths. Only use paths from the provided file tree.`;
+
+        chatHistoryLog.push({ role: "user", parts: [{ text: systemInstruction }] });
+        chatHistoryLog.push({ role: "model", parts: [{ text: "Understood. I am ready to architect features based on the provided repository structure." }] });
       } catch (e) { 
         alert("Configuration Sync Failed: " + e.message); 
         document.getElementById('globalStatus').innerText = "Configuration Error";
       }
     }
 
-    // Logic placeholder for Step 6 integration
-    function sendMessageToArchitect() { alert("Architect agent logic is deploying next!"); }
+    function appendMessage(role, text) {
+      const container = document.getElementById('chatHistory');
+      const div = document.createElement('div');
+      div.className = `message ${role}`;
+      // Cleanly render text, stripping out JSON blocks from the UI
+      let displayText = text.replace(/```json[\s\S]*?```/g, '[Execution Plan Generated Below]');
+      div.innerText = displayText;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    async function sendMessageToArchitect() {
+      const inputEl = document.getElementById('userPromptInput');
+      const userText = inputEl.value.trim();
+      if (!userText) return;
+
+      appendMessage('user', userText);
+      inputEl.value = '';
+      document.getElementById('globalStatus').innerText = "Architect is thinking...";
+
+      chatHistoryLog.push({ role: "user", parts: [{ text: userText }] });
+
+      const geminiToken = localStorage.getItem('codey_gemini');
+      // Using gemini-2.5-flash as you verified it works best
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiToken}`;
+      
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: chatHistoryLog })
+        });
+
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message);
+
+        const aiText = data.candidates[0].content.parts[0].text;
+        
+        chatHistoryLog.push({ role: "model", parts: [{ text: aiText }] });
+        appendMessage('assistant', aiText);
+        document.getElementById('globalStatus').innerText = "Architect System Online";
+
+        // Check if the AI outputted a JSON plan
+        const jsonMatch = aiText.match(/```json([\s\S]*?)
+```/);
+        if (jsonMatch) {
+          try {
+            proposedPlanData = JSON.parse(jsonMatch[1]);
+            renderPlanUI();
+          } catch (err) {
+            console.error("Failed to parse AI JSON plan:", err);
+          }
+        }
+      } catch (e) {
+        alert("Architect Error: " + e.message);
+        document.getElementById('globalStatus').innerText = "Agent Failure";
+      }
+    }
+
+    function renderPlanUI() {
+      document.getElementById('proposalBox').style.display = 'block';
+      document.getElementById('planExplanation').innerText = proposedPlanData.explanation;
+      
+      const container = document.getElementById('stagedFilesContainer');
+      container.innerHTML = '';
+      
+      proposedPlanData.filesToModify.forEach(file => {
+        const div = document.createElement('div');
+        div.className = 'file-patch-card';
+        div.innerText = `📄 Target: ${file} (Pending Code Generation)`;
+        container.appendChild(div);
+      });
+    }
+
+    // Logic placeholder for Step 7 integration
+    function executePlan() { alert("The Coder Agent pipeline will be activated in the final step!"); }
+    document.getElementById('executePlanBtn').onclick = executePlan;
   </script>
 </body>
 </html>
