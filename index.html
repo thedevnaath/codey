@@ -5,88 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Codey Workspace</title>
   <style>
-    :root {
-      --bg: #000000;
-      --surface: #121212;
-      --text: #f5f5f7;
-      --muted: #86868b;
-      --accent: #2997ff;
-      --border: #333336;
-    }
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      -webkit-font-smoothing: antialiased;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 32px 16px;
-    }
-    h1 {
-      font-size: 24px;
-      font-weight: 600;
-      margin-bottom: 32px;
-      letter-spacing: -0.5px;
-    }
-    .input-group {
-      margin-bottom: 20px;
-    }
-    label {
-      display: block;
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-    input {
-      width: 100%;
-      background: var(--bg);
-      border: none;
-      border-bottom: 1px solid var(--border);
-      color: var(--text);
-      padding: 12px 0;
-      font-size: 15px;
-      box-sizing: border-box;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    input:focus {
-      border-color: var(--accent);
-    }
-    button {
-      width: 100%;
-      background: var(--accent);
-      color: white;
-      border: none;
-      padding: 16px;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 16px;
-    }
-    button:active {
-      opacity: 0.8;
-    }
-    .tree-container {
-      margin-top: 40px;
-    }
-    .file-item {
-      padding: 12px 0;
-      font-family: "SF Mono", ui-monospace, monospace;
-      font-size: 13px;
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      border-bottom: 1px solid var(--border);
-    }
-    .file-item.blob {
-      color: var(--text);
-    }
+    :root { --bg: #000000; --surface: #121212; --text: #f5f5f7; --muted: #86868b; --accent: #2997ff; --border: #333336; }
+    body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+    .container { max-width: 600px; margin: 0 auto; padding: 32px 16px; }
+    h1 { font-size: 24px; font-weight: 600; margin-bottom: 24px; }
+    .input-group { margin-bottom: 16px; }
+    label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+    input { width: 100%; background: var(--bg); border: none; border-bottom: 1px solid var(--border); color: var(--text); padding: 12px 0; font-size: 15px; outline: none; }
+    input:focus { border-color: var(--accent); }
+    button { width: 100%; background: var(--accent); color: white; border: none; padding: 16px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+    button:active { opacity: 0.8; }
+    .file-item { padding: 12px 0; font-family: monospace; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--border); cursor: pointer; }
+    .file-item:hover { color: var(--text); }
+    
+    /* New Chat UI Styles */
+    .workspace-grid { display: none; margin-top: 24px; }
+    .chat-box { background: var(--surface); border-radius: 12px; padding: 16px; margin-bottom: 24px; border: 1px solid var(--border); }
+    textarea { width: 100%; background: transparent; border: none; color: var(--text); font-size: 15px; resize: none; outline: none; min-height: 80px; font-family: inherit; }
+    .editor-box { background: var(--surface); border-radius: 12px; padding: 16px; border: 1px solid var(--border); }
+    #codeEditor { width: 100%; height: 300px; background: #000; color: #00ff00; font-family: monospace; border: none; outline: none; resize: vertical; padding: 12px; box-sizing: border-box; }
+    .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .status { font-size: 12px; color: var(--accent); }
   </style>
 </head>
 <body>
@@ -94,90 +33,114 @@
     <h1>Codey</h1>
     
     <div id="setup">
-      <div class="input-group">
-        <label>GitHub PAT</label>
-        <input type="password" id="token" placeholder="github_pat_...">
-      </div>
-      <div class="input-group">
-        <label>Repository Owner</label>
-        <input type="text" id="owner" placeholder="e.g. your-username">
-      </div>
-      <div class="input-group">
-        <label>Repository Name</label>
-        <input type="text" id="repo" placeholder="e.g. operationship">
-      </div>
-      <div class="input-group">
-        <label>Branch</label>
-        <input type="text" id="branch" value="main">
-      </div>
-      <button onclick="loadRepository()">Map Repository</button>
+      <div class="input-group"><label>GitHub PAT</label><input type="password" id="token"></div>
+      <div class="input-group"><label>Gemini API Key</label><input type="password" id="geminiToken"></div>
+      <div class="input-group"><label>Repo Owner</label><input type="text" id="owner"></div>
+      <div class="input-group"><label>Repo Name</label><input type="text" id="repo"></div>
+      <button onclick="loadRepository()">Enter Workspace</button>
     </div>
 
-    <div id="workspace" class="tree-container" style="display: none;">
-      <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 16px; color: var(--muted);">Project Structure</h3>
-      <div id="fileTree"></div>
+    <div id="workspace" class="workspace-grid">
+      <div class="chat-box">
+        <div class="header-bar">
+          <label>Prompt Gemini</label>
+          <span class="status" id="aiStatus">Ready</span>
+        </div>
+        <textarea id="prompt" placeholder="e.g. Add a dark mode toggle to the Navbar component..."></textarea>
+        <button onclick="generateCode()" style="padding: 12px; margin-top: 8px;">Generate Code</button>
+      </div>
+
+      <div class="editor-box" id="editorSection" style="display: none;">
+        <div class="header-bar">
+          <label id="editingFile">Editing: None</label>
+        </div>
+        <textarea id="codeEditor"></textarea>
+        <button onclick="commitChanges()" style="background: #34c759;">Commit & Push to GitHub</button>
+      </div>
+      
+      <div style="margin-top: 24px;">
+        <label>Project Files (Tap to load manually)</label>
+        <div id="fileTree" style="margin-top: 12px;"></div>
+      </div>
     </div>
   </div>
 
   <script>
+    let repoTree = [];
+    let currentFileSha = "";
+    let currentFilePath = "";
+
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById('token').value = localStorage.getItem('codey_token') || '';
+      document.getElementById('geminiToken').value = localStorage.getItem('codey_gemini') || '';
       document.getElementById('owner').value = localStorage.getItem('codey_owner') || '';
       document.getElementById('repo').value = localStorage.getItem('codey_repo') || '';
-      document.getElementById('branch').value = localStorage.getItem('codey_branch') || 'main';
     });
 
     async function loadRepository() {
       const token = document.getElementById('token').value;
+      const geminiToken = document.getElementById('geminiToken').value;
       const owner = document.getElementById('owner').value;
       const repo = document.getElementById('repo').value;
-      const branch = document.getElementById('branch').value;
 
-      if (!token || !owner || !repo) return alert("Missing credentials.");
+      if (!token || !geminiToken || !owner || !repo) return alert("Fill all fields.");
 
       localStorage.setItem('codey_token', token);
+      localStorage.setItem('codey_gemini', geminiToken);
       localStorage.setItem('codey_owner', owner);
       localStorage.setItem('codey_repo', repo);
-      localStorage.setItem('codey_branch', branch);
 
-      const url = `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`;
-
+      const url = `https://api.github.com/repos/${owner}/${repo}/git/trees/main?recursive=1`;
       try {
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        });
-
-        if (!response.ok) throw new Error(await response.text());
-
+        const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` }});
         const data = await response.json();
-        renderTree(data.tree);
+        repoTree = data.tree.filter(item => item.type === 'blob' && !item.path.includes('node_modules') && !item.path.includes('.next'));
         
-        document.getElementById('workspace').style.display = 'block';
+        renderTree();
         document.getElementById('setup').style.display = 'none';
-      } catch (error) {
-        alert("Failed to connect. Error: " + error.message);
-      }
+        document.getElementById('workspace').style.display = 'block';
+      } catch (e) { alert("GitHub Error: " + e.message); }
     }
 
-    function renderTree(tree) {
+    function renderTree() {
       const container = document.getElementById('fileTree');
       container.innerHTML = '';
-      
-      const filteredTree = tree.filter(item => !item.path.includes('node_modules') && !item.path.includes('.next'));
-      
-      filteredTree.forEach(item => {
+      repoTree.forEach(item => {
         const div = document.createElement('div');
-        div.className = `file-item ${item.type}`;
-        
-        const icon = item.type === 'tree' ? '📁' : '📄';
-        div.innerHTML = `<span>${icon}</span> <span>${item.path}</span>`;
-        
+        div.className = 'file-item';
+        div.innerText = `📄 ${item.path}`;
+        div.onclick = () => fetchFileContent(item.path);
         container.appendChild(div);
       });
     }
+
+    async function fetchFileContent(path) {
+      document.getElementById('aiStatus').innerText = "Loading file...";
+      const token = localStorage.getItem('codey_token');
+      const owner = localStorage.getItem('codey_owner');
+      const repo = localStorage.getItem('codey_repo');
+      
+      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+      const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` }});
+      const data = await response.json();
+      
+      currentFileSha = data.sha;
+      currentFilePath = path;
+      
+      // GitHub returns base64 encoded content
+      const content = decodeURIComponent(escape(window.atob(data.content)));
+      
+      document.getElementById('codeEditor').value = content;
+      document.getElementById('editingFile').innerText = `Editing: ${path}`;
+      document.getElementById('editorSection').style.display = 'block';
+      document.getElementById('aiStatus').innerText = "Ready";
+      
+      return content;
+    }
+
+    // AI logic and Committing logic will be added in Step 4
+    function generateCode() { alert("Gemini integration will be activated in the next step!"); }
+    function commitChanges() { alert("Commit integration will be activated in the next step!"); }
   </script>
 </body>
 </html>
