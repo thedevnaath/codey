@@ -3,71 +3,85 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Codey Workspace</title>
+  <title>Codey Multi-Agent Workspace</title>
   <style>
-    :root { --bg: #000000; --surface: #121212; --text: #f5f5f7; --muted: #86868b; --accent: #2997ff; --border: #333336; }
+    :root { --bg: #000000; --surface: #121212; --text: #f5f5f7; --muted: #86868b; --accent: #2997ff; --border: #333336; --success: #34c759; }
     body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
-    .container { max-width: 600px; margin: 0 auto; padding: 32px 16px; }
-    h1 { font-size: 24px; font-weight: 600; margin-bottom: 24px; letter-spacing: -0.5px; }
+    .container { max-width: 650px; margin: 0 auto; padding: 24px 16px; }
+    h1 { font-size: 22px; font-weight: 600; margin-bottom: 24px; letter-spacing: -0.5px; }
     .input-group { margin-bottom: 16px; }
     label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
     input { width: 100%; background: var(--bg); border: none; border-bottom: 1px solid var(--border); color: var(--text); padding: 12px 0; font-size: 15px; outline: none; }
     input:focus { border-color: var(--accent); }
-    button { width: 100%; background: var(--accent); color: white; border: none; padding: 16px; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+    button { width: 100%; background: var(--accent); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; }
     button:active { opacity: 0.8; }
-    .file-item { padding: 12px 0; font-family: monospace; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--border); cursor: pointer; }
-    .file-item:hover { color: var(--text); }
     
-    .workspace-grid { display: none; margin-top: 24px; }
-    .chat-box { background: var(--surface); border-radius: 12px; padding: 16px; margin-bottom: 24px; border: 1px solid var(--border); }
-    textarea { width: 100%; background: transparent; border: none; color: var(--text); font-size: 15px; resize: none; outline: none; min-height: 80px; font-family: inherit; }
-    .editor-box { background: var(--surface); border-radius: 12px; padding: 16px; border: 1px solid var(--border); }
-    #codeEditor { width: 100%; height: 350px; background: #000; color: #f5f5f7; font-family: monospace; font-size: 13px; border: 1px solid var(--border); outline: none; resize: vertical; padding: 12px; box-sizing: border-box; border-radius: 6px; margin-top: 8px; }
-    .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .status { font-size: 12px; color: var(--accent); font-weight: 500; }
+    .workspace-layout { display: none; }
+    
+    /* Live Chat UI styling */
+    .chat-container { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; height: 400px; margin-bottom: 20px; overflow: hidden; }
+    .chat-messages { flex: 1; padding: 16px; overflow-y: auto; font-size: 14px; line-height: 1.5; }
+    .message { margin-bottom: 16px; padding: 10px 14px; border-radius: 8px; max-width: 85%; }
+    .message.user { background: #262629; align-self: flex-end; margin-left: auto; }
+    .message.assistant { background: transparent; border-left: 2px solid var(--accent); padding-left: 12px; }
+    .chat-input-area { display: flex; border-top: 1px solid var(--border); background: #1c1c1e; padding: 8px; align-items: center; }
+    .chat-input-area textarea { flex: 1; background: transparent; border: none; color: var(--text); font-size: 14px; resize: none; outline: none; padding: 8px; height: 24px; font-family: inherit; }
+    .chat-send-btn { width: auto; margin-top: 0; padding: 8px 16px; background: var(--accent); border-radius: 6px; font-size: 13px; }
+    
+    /* Plan Presentation & Review box */
+    .plan-box { background: var(--surface); border: 1px solid var(--success); border-radius: 12px; padding: 16px; margin-bottom: 20px; display: none; }
+    .file-patch-card { background: #000; border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-top: 10px; }
+    .diff-view { font-family: monospace; font-size: 12px; white-space: pre-wrap; background: #09090b; padding: 8px; border-radius: 4px; max-height: 200px; overflow-y: auto; margin-top: 8px; border: 1px solid #222; }
+    
+    .status-bar { font-size: 12px; color: var(--accent); margin-bottom: 12px; font-weight: 500; text-align: right; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Codey</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h1>Codey Multi-Agent OS</h1>
+      <div class="status-bar" id="globalStatus">Ready</div>
+    </div>
     
+    <!-- Setup Configurations -->
     <div id="setup">
       <div class="input-group"><label>GitHub PAT</label><input type="password" id="token"></div>
       <div class="input-group"><label>Gemini API Key</label><input type="password" id="geminiToken"></div>
       <div class="input-group"><label>Repo Owner / Org Name</label><input type="text" id="owner"></div>
       <div class="input-group"><label>Repo Name</label><input type="text" id="repo"></div>
-      <button onclick="loadRepository()">Enter Workspace</button>
+      <button onclick="loadRepository()">Initialize Environment</button>
     </div>
 
-    <div id="workspace" class="workspace-grid">
-      <div class="chat-box">
-        <div class="header-bar">
-          <label>Prompt Gemini</label>
-          <span class="status" id="aiStatus">Ready</span>
+    <!-- Active Multi-Agent Workspace -->
+    <div id="workspace" class="workspace-layout">
+      
+      <!-- Phase 1: Conversation & Strategy Engine -->
+      <div class="chat-container">
+        <div class="chat-messages" id="chatHistory">
+          <div class="message assistant">Hello! I am the Architect Agent. I've mapped out your repository's directories. Tell me what feature or modification you want to tackle, and we can plan it cleanly across your files.</div>
         </div>
-        <textarea id="prompt" placeholder="Tell Gemini what to build or change in the selected file..."></textarea>
-        <button onclick="generateCode()" style="padding: 12px; margin-top: 8px;">Generate Code</button>
+        <div class="chat-input-area">
+          <textarea id="userPromptInput" placeholder="Discuss changes or ask questions..."></textarea>
+          <button class="chat-send-btn" onclick="sendMessageToArchitect()">Send</button>
+        </div>
       </div>
 
-      <div class="editor-box" id="editorSection" style="display: none;">
-        <div class="header-bar">
-          <label id="editingFile">Editing: None</label>
-        </div>
-        <textarea id="codeEditor"></textarea>
-        <button onclick="commitChanges()" style="background: #34c759;">Commit & Push to GitHub</button>
+      <!-- Phase 2: Actionable Target Plans (Generated by AI Plan Analysis) -->
+      <div class="plan-box" id="proposalBox">
+        <h3 style="margin-top: 0; font-size: 15px; font-weight: 600; color: var(--success);">Proposed Multi-File Execution Plan</h3>
+        <p id="planExplanation" style="font-size: 13px; color: var(--muted); margin-bottom: 12px;"></p>
+        <div id="stagedFilesContainer"></div>
+        <button id="executePlanBtn" style="background: var(--success); margin-top: 16px;">Execute and Review Changes</button>
       </div>
-      
-      <div style="margin-top: 24px;">
-        <label>Project Files</label>
-        <div id="fileTree" style="margin-top: 12px;"></div>
-      </div>
+
     </div>
   </div>
 
   <script>
-    let repoTree = [];
-    let currentFileSha = "";
-    let currentFilePath = "";
+    // State storage for full session memory tracking
+    let repoFilePaths = [];
+    let chatHistoryLog = []; // Stores context memory lines to avoid hitting limits
+    let proposedPlanData = null;
 
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById('token').value = localStorage.getItem('codey_token') || '';
@@ -82,158 +96,46 @@
       const owner = document.getElementById('owner').value;
       const repo = document.getElementById('repo').value;
 
-      if (!token || !geminiToken || !owner || !repo) return alert("Fill all fields.");
+      if (!token || !geminiToken || !owner || !repo) return alert("Fill all configuration parameters.");
 
       localStorage.setItem('codey_token', token);
       localStorage.setItem('codey_gemini', geminiToken);
       localStorage.setItem('codey_owner', owner);
       localStorage.setItem('codey_repo', repo);
 
+      document.getElementById('globalStatus').innerText = "Mapping codebase tree...";
       const url = `https://api.github.com/repos/${owner}/${repo}/git/trees/main?recursive=1`;
       try {
         const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` }});
         if (!response.ok) throw new Error(await response.text());
         const data = await response.json();
-        repoTree = data.tree.filter(item => item.type === 'blob' && !item.path.includes('node_modules') && !item.path.includes('.next') && !item.path.includes('.git'));
         
-        renderTree();
+        // Extract string file paths explicitly to provide clean metadata to the Architect
+        repoFilePaths = data.tree
+          .filter(item => item.type === 'blob' && !item.path.includes('node_modules') && !item.path.includes('.next') && !item.path.includes('.git'))
+          .map(item => item.path);
+        
         document.getElementById('setup').style.display = 'none';
         document.getElementById('workspace').style.display = 'block';
-      } catch (e) { alert("GitHub Error: " + e.message); }
-    }
-
-    function renderTree() {
-      const container = document.getElementById('fileTree');
-      container.innerHTML = '';
-      repoTree.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'file-item';
-        div.innerText = `📄 ${item.path}`;
-        div.onclick = () => fetchFileContent(item.path);
-        container.appendChild(div);
-      });
-    }
-
-    async function fetchFileContent(path) {
-      document.getElementById('aiStatus').innerText = "Loading file...";
-      const token = localStorage.getItem('codey_token');
-      const owner = localStorage.getItem('codey_owner');
-      const repo = localStorage.getItem('codey_repo');
-      
-      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-      try {
-        const response = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` }});
-        const data = await response.json();
+        document.getElementById('globalStatus').innerText = "Architect System Online";
         
-        currentFileSha = data.sha;
-        currentFilePath = path;
-        
-        const content = decodeURIComponent(escape(window.atob(data.content)));
-        
-        document.getElementById('codeEditor').value = content;
-        document.getElementById('editingFile').innerText = `Editing: ${path}`;
-        document.getElementById('editorSection').style.display = 'block';
-        document.getElementById('aiStatus').innerText = "Ready";
-      } catch (e) { alert("Failed to fetch file: " + e.message); }
-    }
-
-    async function generateCode() {
-      const geminiToken = localStorage.getItem('codey_gemini');
-      const promptText = document.getElementById('prompt').value;
-      const currentCode = document.getElementById('codeEditor').value;
-
-      if (!promptText) return alert("Please type what you want to change.");
-      if (!currentFilePath) return alert("Select a file from below first.");
-
-      document.getElementById('aiStatus').innerText = "Gemini is writing code...";
-
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiToken}`;
-      const payload = {
-        contents: [{
-          parts: [{
-            text: `You are an expert full-stack developer agent. Modify the following file according to the instructions.
-            
-File Path: ${currentFilePath}
-Current Code Base:
-${currentCode}
-
-User Requirements: ${promptText}
-
-CRITICAL INSTRUCTION: Return ONLY the exact, updated file code. Do not write explanations. Do not include markdown code ticks (\`\`\`). Just raw text code.`
-          }]
-        }]
-      };
-
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+        // Push initial memory context baseline 
+        chatHistoryLog.push({
+          role: "user",
+          parts: [{ text: `Here is the current directory structure tree of our repository:\n${JSON.stringify(repoFilePaths, null, 2)}` }]
         });
-
-        const data = await response.json();
-        let aiCode = data.candidates[0].content.parts[0].text;
-
-        // Strip markdown backticks if Gemini ignores the prompt restriction
-        if (aiCode.trim().startsWith("```")) {
-          const lines = aiCode.trim().split("\n");
-          lines.shift();
-          if (lines[lines.length - 1].trim() === "```") lines.pop();
-          aiCode = lines.join("\n");
-        }
-
-        document.getElementById('codeEditor').value = aiCode;
-        document.getElementById('aiStatus').innerText = "Modifications Ready";
-      } catch (e) {
-        alert("Gemini Error: " + e.message);
-        document.getElementById('aiStatus').innerText = "Failed";
+        chatHistoryLog.push({
+          role: "model",
+          parts: [{ text: "Understood. I have verified the complete file tree mapping. I am ready to coordinate changes." }]
+        });
+      } catch (e) { 
+        alert("Configuration Sync Failed: " + e.message); 
+        document.getElementById('globalStatus').innerText = "Configuration Error";
       }
     }
 
-    async function commitChanges() {
-      const token = localStorage.getItem('codey_token');
-      const owner = localStorage.getItem('codey_owner');
-      const repo = localStorage.getItem('codey_repo');
-      const codeValue = document.getElementById('codeEditor').value;
-
-      if (!currentFilePath) return alert("No active file layout.");
-      const message = prompt("Enter Commit Message:", `Codey: updated ${currentFilePath}`);
-      if (!message) return;
-
-      document.getElementById('aiStatus').innerText = "Committing to GitHub...";
-      const url = `https://api.github.com/repos/${owner}/${repo}/contents/${currentFilePath}`;
-      
-      // UTF-8 safe base64 encoder
-      const base64Content = window.btoa(unescape(encodeURIComponent(codeValue)));
-
-      const body = {
-        message: message,
-        content: base64Content,
-        sha: currentFileSha,
-        branch: "main"
-      };
-
-      try {
-        const response = await fetch(url, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(body)
-        });
-
-        if (!response.ok) throw new Error(await response.text());
-        const data = await response.json();
-        currentFileSha = data.content.sha; // update internal SHA track
-
-        document.getElementById('aiStatus').innerText = "Pushed successfully!";
-        alert("Successfully committed to main branch!");
-      } catch (e) {
-        alert("Commit Error: " + e.message);
-        document.getElementById('aiStatus').innerText = "Failed";
-      }
-    }
+    // Logic placeholder for Step 6 integration
+    function sendMessageToArchitect() { alert("Architect agent logic is deploying next!"); }
   </script>
 </body>
 </html>
