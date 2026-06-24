@@ -74,6 +74,7 @@
     let repoFilePaths = [];
     let chatHistoryLog = []; 
     let proposedPlanData = null;
+    const ticks = String.fromCharCode(96).repeat(3);
 
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById('token').value = localStorage.getItem('codey_token') || '';
@@ -83,7 +84,6 @@
     });
 
     async function loadRepository() {
-      // Immediate alert added to prove the button works
       document.getElementById('globalStatus').innerText = "Connecting...";
 
       const token = document.getElementById('token').value;
@@ -119,21 +119,103 @@
           "You have access to the following repository file tree:",
           JSON.stringify(repoFilePaths),
           "Rules:",
-          "1. Discuss the feature the user wants to build. Ask clarifying questions if the request is ambiguous or if you aren't sure which files need to be modified.",
-          "2. When you are confident about exactly which files need to be changed to fulfill the request, you MUST output your plan in a strict JSON block at the end of your message.",
-          "3. The JSON block MUST be formatted exactly like this, enclosed in 
-http://googleusercontent.com/immersive_entry_chip/0
-http://googleusercontent.com/immersive_entry_chip/1
+          "1. Discuss the feature the user wants to build. Ask clarifying questions if the request is ambiguous.",
+          "2. When you are confident about exactly which files need to be changed, you MUST output your plan in a strict JSON block at the very end of your message.",
+          "3. The JSON block MUST be formatted exactly like this, enclosed in markdown code blocks:",
+          ticks + "json",
+          "{",
+          "  \"explanation\": \"A one-sentence summary of the execution plan.\",",
+          "  \"filesToModify\": [\"path/to/file1.js\", \"path/to/file2.js\"]",
+          "}",
+          ticks,
+          "Never invent file paths. Only use paths from the provided file tree."
+        ].join("\n");
 
-**2. Force Vercel to Deploy Manually**
-Because GitHub webhooks are acting up, we will trigger Vercel ourselves:
-1. Go to your **Vercel Dashboard**.
-2. Click on the `codey` project.
-3. Click the **Deployments** tab at the top.
-4. Click the three dots (`...`) next to your most recent deployment and click **Redeploy**. Wait for it to turn green.
+        chatHistoryLog.push({ role: "user", parts: [{ text: systemInstruction }] });
+        chatHistoryLog.push({ role: "model", parts: [{ text: "Understood. I am ready to architect features based on the provided repository structure." }] });
+      } catch (e) { 
+        alert("Configuration Sync Failed: " + e.message); 
+        document.getElementById('globalStatus').innerText = "Configuration Error";
+      }
+    }
 
-**3. Bypass the Amazon Silk Cache (CRITICAL)**
-1. In your Silk Browser, open a **New Private Tab** (or clear your browsing history cache).
-2. Go to `codey.vercel.app`.
+    function appendMessage(role, text) {
+      const container = document.getElementById('chatHistory');
+      const div = document.createElement('div');
+      div.className = "message " + role;
+      
+      const cleanRegex = new RegExp(ticks + "json[\\s\\S]*?" + ticks, "g");
+      let displayText = text.replace(cleanRegex, '\n\n[Execution Plan Generated Below]');
+      
+      div.innerText = displayText;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
 
-**Verify:** Look at the top of the screen. If it says **Codey OS (v2.1)**, the fix is applied. Click "Initialize Environment", and the UI will cleanly transition into your Architect Chat workspace!
+    async function sendMessageToArchitect() {
+      const inputEl = document.getElementById('userPromptInput');
+      const userText = inputEl.value.trim();
+      if (!userText) return;
+
+      appendMessage('user', userText);
+      inputEl.value = '';
+      document.getElementById('globalStatus').innerText = "Architect is thinking...";
+
+      chatHistoryLog.push({ role: "user", parts: [{ text: userText }] });
+
+      const geminiToken = localStorage.getItem('codey_gemini');
+      const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + geminiToken;
+      
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: chatHistoryLog })
+        });
+
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message);
+
+        const aiText = data.candidates[0].content.parts[0].text;
+        
+        chatHistoryLog.push({ role: "model", parts: [{ text: aiText }] });
+        appendMessage('assistant', aiText);
+        document.getElementById('globalStatus').innerText = "Architect System Online";
+
+        const matchRegex = new RegExp(ticks + "json([\\s\\S]*?)" + ticks);
+        const jsonMatch = aiText.match(matchRegex);
+        if (jsonMatch) {
+          try {
+            proposedPlanData = JSON.parse(jsonMatch[1].trim());
+            renderPlanUI();
+          } catch (err) {
+            console.error("Failed to parse AI JSON plan:", err);
+          }
+        }
+      } catch (e) {
+        alert("Architect Error: " + e.message);
+        document.getElementById('globalStatus').innerText = "Agent Failure";
+      }
+    }
+
+    function renderPlanUI() {
+      document.getElementById('proposalBox').style.display = 'block';
+      document.getElementById('planExplanation').innerText = proposedPlanData.explanation;
+      
+      const container = document.getElementById('stagedFilesContainer');
+      container.innerHTML = '';
+      
+      proposedPlanData.filesToModify.forEach(file => {
+        const div = document.createElement('div');
+        div.className = 'file-patch-card';
+        div.innerText = "📄 Target: " + file;
+        container.appendChild(div);
+      });
+    }
+
+    function executePlan() { 
+      alert("The Coder Agent pipeline will be activated in the final step!"); 
+    }
+  </script>
+</body>
+</html>
