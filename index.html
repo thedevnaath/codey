@@ -36,7 +36,7 @@
 <body>
   <div class="container">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h1>Codey Multi-Agent OS</h1>
+      <h1>Codey OS (v2.1)</h1> 
       <div class="status-bar" id="globalStatus">Ready</div>
     </div>
     
@@ -83,6 +83,9 @@
     });
 
     async function loadRepository() {
+      // Immediate alert added to prove the button works
+      document.getElementById('globalStatus').innerText = "Connecting...";
+
       const token = document.getElementById('token').value;
       const geminiToken = document.getElementById('geminiToken').value;
       const owner = document.getElementById('owner').value;
@@ -96,7 +99,7 @@
       localStorage.setItem('codey_repo', repo);
 
       document.getElementById('globalStatus').innerText = "Mapping codebase tree...";
-      const url = "[https://api.github.com/repos/](https://api.github.com/repos/)" + owner + "/" + repo + "/git/trees/main?recursive=1";
+      const url = "https://api.github.com/repos/" + owner + "/" + repo + "/git/trees/main?recursive=1";
       
       try {
         const response = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token }});
@@ -121,3 +124,16 @@
           "3. The JSON block MUST be formatted exactly like this, enclosed in 
 http://googleusercontent.com/immersive_entry_chip/0
 http://googleusercontent.com/immersive_entry_chip/1
+
+**2. Force Vercel to Deploy Manually**
+Because GitHub webhooks are acting up, we will trigger Vercel ourselves:
+1. Go to your **Vercel Dashboard**.
+2. Click on the `codey` project.
+3. Click the **Deployments** tab at the top.
+4. Click the three dots (`...`) next to your most recent deployment and click **Redeploy**. Wait for it to turn green.
+
+**3. Bypass the Amazon Silk Cache (CRITICAL)**
+1. In your Silk Browser, open a **New Private Tab** (or clear your browsing history cache).
+2. Go to `codey.vercel.app`.
+
+**Verify:** Look at the top of the screen. If it says **Codey OS (v2.1)**, the fix is applied. Click "Initialize Environment", and the UI will cleanly transition into your Architect Chat workspace!
