@@ -3,363 +3,49 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Codey Multi-Agent Workspace</title>
-  <style>
-    :root { --bg: #000000; --surface: #121212; --text: #f5f5f7; --muted: #86868b; --accent: #2997ff; --border: #333336; --success: #34c759; --warning: #ff9f0a; }
-    body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
-    .container { max-width: 650px; margin: 0 auto; padding: 24px 16px; }
-    h1 { font-size: 22px; font-weight: 600; margin-bottom: 24px; letter-spacing: -0.5px; }
-    .input-group { margin-bottom: 16px; }
-    label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
-    input, select { width: 100%; background: var(--bg); border: none; border-bottom: 1px solid var(--border); color: var(--text); padding: 12px 0; font-size: 15px; outline: none; box-sizing: border-box; }
-    input:focus { border-color: var(--accent); }
-    button { width: 100%; background: var(--accent); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; }
-    button:active { opacity: 0.8; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    
-    .workspace-layout { display: none; }
-    
-    .chat-container { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; height: 350px; margin-bottom: 20px; overflow: hidden; }
-    .chat-messages { flex: 1; padding: 16px; overflow-y: auto; font-size: 14px; line-height: 1.5; }
-    .message { margin-bottom: 16px; padding: 10px 14px; border-radius: 8px; max-width: 85%; white-space: pre-wrap; }
-    .message.user { background: #262629; align-self: flex-end; margin-left: auto; }
-    .message.assistant { background: transparent; border-left: 2px solid var(--accent); padding-left: 12px; }
-    .chat-input-area { display: flex; border-top: 1px solid var(--border); background: #1c1c1e; padding: 8px; align-items: center; }
-    .chat-input-area textarea { flex: 1; background: transparent; border: none; color: var(--text); font-size: 14px; resize: none; outline: none; padding: 8px; height: 24px; font-family: inherit; }
-    .chat-send-btn { width: auto; margin-top: 0; padding: 8px 16px; background: var(--accent); border-radius: 6px; font-size: 13px; }
-    
-    .chat-header-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); background: #161617; }
-    select { background: #000; color: var(--text); border: 1px solid var(--border); padding: 6px 10px; border-radius: 6px; font-size: 12px; max-width: 220px; width: auto; }
-    
-    .plan-box { background: var(--surface); border: 1px solid var(--success); border-radius: 12px; padding: 16px; margin-bottom: 20px; display: none; }
-    .file-patch-card { background: #000; border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-top: 10px; font-family: monospace; font-size: 12px; color: var(--text); }
-    
-    /* Execution Workspace UI */
-    .execution-workspace { display: none; background: var(--surface); border: 1px solid var(--warning); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
-    .editor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; font-family: monospace; color: var(--warning); }
-    #coderEditor { width: 100%; height: 350px; background: #000; color: #f5f5f7; font-family: monospace; font-size: 13px; border: 1px solid var(--border); outline: none; resize: vertical; padding: 12px; box-sizing: border-box; border-radius: 6px; }
-    .action-buttons { display: flex; gap: 10px; margin-top: 12px; }
-    .btn-skip { background: #262629; }
-    .btn-commit { background: var(--success); }
-    
-    .status-bar { font-size: 12px; color: var(--accent); margin-bottom: 12px; font-weight: 500; text-align: right; }
-  </style>
+  <title>Codey OS</title>
+  <link rel="stylesheet" href="./css/styles.css">
 </head>
 <body>
-  <div class="container">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h1>Codey OS (v3.0)</h1> 
-      <div class="status-bar" id="globalStatus">Ready</div>
-    </div>
-    
-    <div id="setup">
-      <div class="input-group"><label>GitHub PAT</label><input type="password" id="token"></div>
-      <div class="input-group"><label>Gemini API Key</label><input type="password" id="geminiToken"></div>
-      <div class="input-group"><label>Repo Owner / Org Name</label><input type="text" id="owner"></div>
-      <div class="input-group"><label>Repo Name</label><input type="text" id="repo"></div>
-      <button onclick="loadRepository()">Initialize Environment</button>
-    </div>
+  <div class="app-container">
+    <header class="app-header">
+      <h1 class="logo">Codey</h1>
+      <div id="statusIndicator" class="status-indicator">Initializing Network...</div>
+    </header>
 
-    <div id="workspace" class="workspace-layout">
+    <main id="authView" class="view-layer">
+      <div class="form-group">
+        <input type="password" id="githubToken" placeholder="GitHub Personal Access Token">
+      </div>
+      <div class="form-group">
+        <input type="password" id="geminiToken" placeholder="Gemini API Key">
+      </div>
+      <div class="form-group">
+        <input type="text" id="repoOwner" placeholder="Organization or Username">
+      </div>
+      <div class="form-group">
+        <input type="text" id="repoName" placeholder="Repository Name">
+      </div>
+      <button id="bootSystemBtn" class="primary-btn">Initialize Workspace</button>
+    </main>
+
+    <main id="workspaceView" class="view-layer hidden">
+      <div class="control-bar">
+        <select id="modelSelector" class="minimal-select">
+          <option>Loading optimal models...</option>
+        </select>
+        <button id="runDebuggerBtn" class="secondary-btn">Scan CI/CD Errors</button>
+      </div>
+
+      <div class="chat-interface" id="terminal"></div>
       
-      <div class="chat-container" id="architectContainer">
-        <div class="chat-header-bar">
-          <label style="margin-bottom: 0;">Architect Pipeline</label>
-          <select id="modelSelect">
-            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite</option>
-            <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash</option>
-          </select>
-        </div>
-        <div class="chat-messages" id="chatHistory">
-          <div class="message assistant">System Online. Enter your project blueprint.</div>
-        </div>
-        <div class="chat-input-area">
-          <textarea id="userPromptInput" placeholder="Discuss changes..."></textarea>
-          <button class="chat-send-btn" onclick="sendMessageToArchitect()">Send</button>
-        </div>
+      <div class="input-area">
+        <textarea id="promptInput" placeholder="Describe the feature or fix..."></textarea>
+        <button id="sendBtn" class="action-btn">Send</button>
       </div>
-
-      <div class="plan-box" id="proposalBox">
-        <h3 style="margin-top: 0; font-size: 15px; font-weight: 600; color: var(--success);">Multi-File Execution Plan Ready</h3>
-        <p id="planExplanation" style="font-size: 13px; color: var(--muted); margin-bottom: 12px;"></p>
-        <div id="stagedFilesContainer"></div>
-        <button id="executePlanBtn" onclick="executePlan()" style="background: var(--success); margin-top: 16px;">Engage Coder Agent</button>
-      </div>
-
-      <div class="execution-workspace" id="executionWorkspace">
-        <div class="editor-header">
-          <span id="execProgress">Patching file 1 of X</span>
-          <span id="execFile" style="color: var(--text);">path/to/file.js</span>
-        </div>
-        <textarea id="coderEditor"></textarea>
-        <div class="action-buttons">
-          <button class="btn-skip" onclick="skipFile()">Skip File</button>
-          <button class="btn-commit" id="commitBtn" onclick="commitCurrentFile()">Commit & Next</button>
-        </div>
-      </div>
-
-    </div>
+    </main>
   </div>
 
-  <script>
-    let repoFilePaths = [];
-    let chatHistoryLog = []; 
-    let proposedPlanData = null;
-    const ticks = String.fromCharCode(96).repeat(3);
-
-    // Execution State
-    let currentExecutionIndex = 0;
-    let activeFileSha = "";
-    let activeFilePath = "";
-
-    document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById('token').value = localStorage.getItem('codey_token') || '';
-      document.getElementById('geminiToken').value = localStorage.getItem('codey_gemini') || '';
-      document.getElementById('owner').value = localStorage.getItem('codey_owner') || '';
-      document.getElementById('repo').value = localStorage.getItem('codey_repo') || '';
-    });
-
-    async function loadRepository() {
-      document.getElementById('globalStatus').innerText = "Connecting...";
-      const token = document.getElementById('token').value;
-      const geminiToken = document.getElementById('geminiToken').value;
-      const owner = document.getElementById('owner').value;
-      const repo = document.getElementById('repo').value;
-
-      if (!token || !geminiToken || !owner || !repo) return alert("Fill all configuration parameters.");
-
-      localStorage.setItem('codey_token', token);
-      localStorage.setItem('codey_gemini', geminiToken);
-      localStorage.setItem('codey_owner', owner);
-      localStorage.setItem('codey_repo', repo);
-
-      const url = "https://api.github.com/repos/" + owner + "/" + repo + "/git/trees/main?recursive=1";
-      try {
-        const response = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token }});
-        if (!response.ok) throw new Error(await response.text());
-        const data = await response.json();
-        
-        repoFilePaths = data.tree
-          .filter(item => item.type === 'blob' && !item.path.includes('.git'))
-          .map(item => item.path);
-        
-        document.getElementById('setup').style.display = 'none';
-        document.getElementById('workspace').style.display = 'block';
-        document.getElementById('globalStatus').innerText = "Architect System Online";
-        
-        const systemInstruction = [
-          "You are the Architect Agent for a complex SaaS project. You guide the user in building features.",
-          "Repository file tree:",
-          JSON.stringify(repoFilePaths),
-          "Rules:",
-          "1. Discuss the feature. When confident about which files need changing/creating, output your plan in a JSON block at the end.",
-          "2. Format exactly like this, enclosed in markdown code blocks:",
-          ticks + "json",
-          "{",
-          "  \"explanation\": \"A one-sentence summary of the goal for the Coder Agent.\",",
-          "  \"filesToModify\": [\"path/to/file1.js\", \"path/to/newfile.js\"]",
-          "}",
-          ticks,
-          "You may include new files that don't exist yet if we need to create them."
-        ].join("\n");
-
-        chatHistoryLog.push({ role: "user", parts: [{ text: systemInstruction }] });
-        chatHistoryLog.push({ role: "model", parts: [{ text: "Understood. Awaiting instructions." }] });
-      } catch (e) { 
-        alert("Configuration Sync Failed: " + e.message); 
-      }
-    }
-
-    function appendMessage(role, text) {
-      const container = document.getElementById('chatHistory');
-      const div = document.createElement('div');
-      div.className = "message " + role;
-      const cleanRegex = new RegExp(ticks + "json[\\s\\S]*?" + ticks, "g");
-      div.innerText = text.replace(cleanRegex, '\n\n[Execution Plan Generated]');
-      container.appendChild(div);
-      container.scrollTop = container.scrollHeight;
-    }
-
-    async function sendMessageToArchitect() {
-      const inputEl = document.getElementById('userPromptInput');
-      const userText = inputEl.value.trim();
-      if (!userText) return;
-
-      appendMessage('user', userText);
-      inputEl.value = '';
-      document.getElementById('globalStatus').innerText = "Architect is thinking...";
-      chatHistoryLog.push({ role: "user", parts: [{ text: userText }] });
-
-      const geminiToken = localStorage.getItem('codey_gemini');
-      const activeModel = document.getElementById('modelSelect').value;
-      const url = "https://generativelanguage.googleapis.com/v1beta/models/" + activeModel + ":generateContent?key=" + geminiToken;
-      
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: chatHistoryLog })
-        });
-        const data = await response.json();
-        if (data.error) throw new Error(data.error.message);
-
-        const aiText = data.candidates[0].content.parts[0].text;
-        chatHistoryLog.push({ role: "model", parts: [{ text: aiText }] });
-        appendMessage('assistant', aiText);
-        document.getElementById('globalStatus').innerText = "Architect System Online";
-
-        const matchRegex = new RegExp(ticks + "json([\\s\\S]*?)" + ticks);
-        const jsonMatch = aiText.match(matchRegex);
-        if (jsonMatch) {
-          proposedPlanData = JSON.parse(jsonMatch[1].trim());
-          renderPlanUI();
-        }
-      } catch (e) {
-        alert("Architect Error: " + e.message);
-        document.getElementById('globalStatus').innerText = "Agent Failure";
-      }
-    }
-
-    function renderPlanUI() {
-      document.getElementById('proposalBox').style.display = 'block';
-      document.getElementById('planExplanation').innerText = proposedPlanData.explanation;
-      const container = document.getElementById('stagedFilesContainer');
-      container.innerHTML = '';
-      proposedPlanData.filesToModify.forEach(file => {
-        const div = document.createElement('div');
-        div.className = 'file-patch-card';
-        div.innerText = "📄 Staged: " + file;
-        container.appendChild(div);
-      });
-    }
-
-    // --- CODER AGENT LOGIC ---
-
-    function executePlan() { 
-      document.getElementById('proposalBox').style.display = 'none';
-      document.getElementById('architectContainer').style.display = 'none';
-      document.getElementById('executionWorkspace').style.display = 'block';
-      currentExecutionIndex = 0;
-      processNextFile();
-    }
-
-    async function processNextFile() {
-      if (currentExecutionIndex >= proposedPlanData.filesToModify.length) {
-        document.getElementById('executionWorkspace').innerHTML = "<h3 style='color:var(--success)'>All files successfully patched and committed!</h3><button onclick='location.reload()'>Return to Workspace</button>";
-        document.getElementById('globalStatus').innerText = "Pipeline Complete";
-        return;
-      }
-
-      activeFilePath = proposedPlanData.filesToModify[currentExecutionIndex];
-      document.getElementById('execProgress').innerText = `Patching file ${currentExecutionIndex + 1} of ${proposedPlanData.filesToModify.length}`;
-      document.getElementById('execFile').innerText = activeFilePath;
-      document.getElementById('coderEditor').value = "Fetching file and prompting Coder Agent...";
-      document.getElementById('commitBtn').disabled = true;
-      document.getElementById('globalStatus').innerText = "Coder Agent Active...";
-
-      const token = localStorage.getItem('codey_token');
-      const owner = localStorage.getItem('codey_owner');
-      const repo = localStorage.getItem('codey_repo');
-      
-      let currentFileContent = "";
-      activeFileSha = "";
-
-      // 1. Fetch current file (if it exists)
-      const githubUrl = "https://api.github.com/repos/" + owner + "/" + repo + "/contents/" + activeFilePath;
-      try {
-        const fileResponse = await fetch(githubUrl, { headers: { 'Authorization': 'Bearer ' + token }});
-        if (fileResponse.ok) {
-          const fileData = await fileResponse.json();
-          activeFileSha = fileData.sha;
-          currentFileContent = decodeURIComponent(escape(window.atob(fileData.content)));
-        } else {
-          currentFileContent = "// New File - Generated by Codey";
-        }
-      } catch (e) { console.warn("File fetch warning", e); }
-
-      // 2. Prompt Coder Agent
-      const geminiToken = localStorage.getItem('codey_gemini');
-      const activeModel = document.getElementById('modelSelect').value;
-      const apiURL = "https://generativelanguage.googleapis.com/v1beta/models/" + activeModel + ":generateContent?key=" + geminiToken;
-
-      const coderPrompt = [
-        "You are the Coder Agent executing an Architect's plan.",
-        "Architect's Goal: " + proposedPlanData.explanation,
-        "File to modify: " + activeFilePath,
-        "Current file content:",
-        ticks,
-        currentFileContent,
-        ticks,
-        "CRITICAL INSTRUCTION: Return ONLY the exact, updated file code. Do not write explanations. Do not include markdown code blocks. Just raw text code."
-      ].join("\n");
-
-      try {
-        const aiResponse = await fetch(apiURL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: coderPrompt }] }] })
-        });
-        const aiData = await aiResponse.json();
-        if (aiData.error) throw new Error(aiData.error.message);
-
-        let aiCode = aiData.candidates[0].content.parts[0].text;
-        
-        // Strip out backticks if the agent ignores instructions
-        if (aiCode.trim().startsWith(ticks)) {
-          const lines = aiCode.trim().split("\n");
-          lines.shift(); // remove opening
-          if (lines[lines.length - 1].trim() === ticks) lines.pop(); // remove closing
-          aiCode = lines.join("\n");
-        }
-
-        document.getElementById('coderEditor').value = aiCode;
-        document.getElementById('commitBtn').disabled = false;
-        document.getElementById('globalStatus').innerText = "Review Required";
-      } catch (e) {
-        document.getElementById('coderEditor').value = "Coder Error: " + e.message;
-      }
-    }
-
-    async function commitCurrentFile() {
-      document.getElementById('commitBtn').disabled = true;
-      document.getElementById('globalStatus').innerText = "Pushing to GitHub...";
-      
-      const token = localStorage.getItem('codey_token');
-      const owner = localStorage.getItem('codey_owner');
-      const repo = localStorage.getItem('codey_repo');
-      const codeValue = document.getElementById('coderEditor').value;
-
-      const base64Content = window.btoa(unescape(encodeURIComponent(codeValue)));
-      const url = "https://api.github.com/repos/" + owner + "/" + repo + "/contents/" + activeFilePath;
-      
-      const body = {
-        message: "Codey: Patched " + activeFilePath,
-        content: base64Content,
-        branch: "main"
-      };
-      if (activeFileSha) body.sha = activeFileSha; // Required if modifying existing file
-
-      try {
-        const response = await fetch(url, {
-          method: 'PUT',
-          headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-
-        if (!response.ok) throw new Error(await response.text());
-        
-        currentExecutionIndex++;
-        processNextFile();
-      } catch (e) {
-        alert("Commit Error: " + e.message);
-        document.getElementById('commitBtn').disabled = false;
-      }
-    }
-
-    function skipFile() {
-      currentExecutionIndex++;
-      processNextFile();
-    }
-  </script>
+  <script type="module" src="./js/main.js"></script>
 </body>
 </html>
