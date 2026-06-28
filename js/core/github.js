@@ -10,9 +10,27 @@ export class GitHubEngine {
   }
 
   async getTree() {
-    const url = `https://api.github.com/repos/${this.owner}/${this.repo}/git/trees/main?recursive=1`;
-    const res = await fetch(url, { headers: this.headers });
-    const data = await res.json();
+    // 1. Fetch repo info to dynamically find the default branch (main vs master)
+    const repoUrl = `https://api.github.com/repos/${this.owner}/${this.repo}`;
+    const repoRes = await fetch(repoUrl, { headers: this.headers });
+    if (!repoRes.ok) throw new Error(`Repository not found. Check name and token access.`);
+    const repoData = await repoRes.json();
+    const branch = repoData.default_branch || "main";
+
+    // 2. Fetch the file tree
+    const treeUrl = `https://api.github.com/repos/${this.owner}/${this.repo}/git/trees/${branch}?recursive=1`;
+    const treeRes = await fetch(treeUrl, { headers: this.headers });
+    
+    // Catch empty repositories gracefully
+    if (treeRes.status === 409) {
+      throw new Error("The repository is completely empty! Please add a README file on GitHub first so Codey has a branch to map.");
+    }
+    
+    if (!treeRes.ok) throw new Error(`GitHub API Error: ${await treeRes.text()}`);
+    
+    const data = await treeRes.json();
+    if (!data.tree) throw new Error("No file tree returned from GitHub.");
+
     return data.tree.filter(i => i.type === 'blob' && !i.path.includes('.git')).map(i => i.path);
   }
 
@@ -31,8 +49,8 @@ export class GitHubEngine {
     const url = `https://api.github.com/repos/${this.owner}/${this.repo}/contents/${path}`;
     const body = {
       message: message,
-      content: window.btoa(unescape(encodeURIComponent(content))),
-      branch: "main"
+      content: window.btoa(unescape(encodeURIComponent(content)))
+      // Removed hardcoded 'main' branch; GitHub API will automatically push to the default branch
     };
     if (sha) body.sha = sha;
 
@@ -46,15 +64,13 @@ export class GitHubEngine {
   }
 
   async getLatestFailedActionLog() {
-    // Fetch runs
     const runUrl = `https://api.github.com/repos/${this.owner}/${this.repo}/actions/runs?status=failure&per_page=1`;
     const runRes = await fetch(runUrl, { headers: this.headers });
     const runData = await runRes.json();
     
-    if (runData.total_count === 0) return null;
+    if (!runData || runData.total_count === 0) return null;
     const runId = runData.workflow_runs[0].id;
 
-    // Fetch jobs for the run
     const jobsUrl = `https://api.github.com/repos/${this.owner}/${this.repo}/actions/runs/${runId}/jobs`;
     const jobsRes = await fetch(jobsUrl, { headers: this.headers });
     const jobsData = await jobsRes.json();
@@ -62,9 +78,7 @@ export class GitHubEngine {
     const failedJob = jobsData.jobs.find(j => j.conclusion === 'failure');
     if (!failedJob) return null;
 
-    // In a browser environment, downloading zip logs requires complex blob parsing.
-    // We return job step context instead.
     const steps = failedJob.steps.filter(s => s.conclusion === 'failure');
-    return `Job '${failedJob.name}' failed. Step: '${steps[0]?.name}'. Please verify syntax or dependency requirements for this step.`; 
+    return `Job '${failedJob.name}' failed. Step: '${steps[0]?.name}'. Please verify syntax or dependency requirements.`; 
   }
 }
