@@ -57,7 +57,28 @@ export class LLMEngine {
       const data = await response.json();
       if (data.error) throw new Error(data.error.message);
       
-      return data.candidates[0].content.parts[0].text;
+      // --- FAULT-TOLERANT VALIDATION: SAFETY FILTER HANDLING ---
+      if (!data.candidates || data.candidates.length === 0) {
+        if (data.promptFeedback && data.promptFeedback.blockReason) {
+          throw new Error(`Blocked by Gemini safety filters. Reason: ${data.promptFeedback.blockReason}`);
+        }
+        throw new Error(`No text candidates returned. Structure: ${JSON.stringify(data)}`);
+      }
+
+      const candidate = data.candidates[0];
+      
+      // Intercept mid-generation execution blocks
+      if (candidate.finishReason && candidate.finishReason !== "STOP") {
+        if (candidate.finishReason === "SAFETY") {
+          throw new Error("Generation was terminated mid-stream due to content safety heuristics.");
+        }
+      }
+
+      if (!candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+        throw new Error("Candidate returned valid wrapper structure but contains empty content text components.");
+      }
+      
+      return candidate.content.parts[0].text || "";
     } catch (e) {
       throw new Error(`LLM Failure: ${e.message}`);
     }
